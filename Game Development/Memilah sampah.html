@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Sayangi Bumi Kita!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&family=Quicksand&display=swap" rel="stylesheet">
+  <style>
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    body {
+      font-family: 'Quicksand', 'Poppins', 'Times New Roman';
+      background-image: url('rinjani.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      text-align: center;
+      padding: 220px;
+    }
+
+    .container {
+      max-width: px;
+      margin: -100px auto 0 auto;
+      padding: 20px;
+      background: #fdf6ec;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    #start-btn {
+      background-color: #4ade80;
+      color: white;
+    }
+
+    .option-btn {
+      background-color: #d9f99d;
+    }
+
+    .option-btn:hover {
+      background-color: #bef264;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ayo Pilah Sampahnya!</h1>
+    <button id="start-btn">Mulai Game</button>
+
+    <div id="game-area" style="display: none;">
+      <p id="question">Soal akan muncul di sini</p>
+      <div class="options">
+        <button class="option-btn"></button>
+        <button class="option-btn"></button>
+        <button class="option-btn"></button>
+        <button class="option-btn"></button>
+      </div>
+      <p id="feedback"></p>
+      <p id="score">Skor: 0</p>
+      <p id="high-score">Skor Tertinggi: 0</p>
+      <button id="restart-btn" style="display: none;">Mulai Ulang</button>
+      
+
+      <!-- Audio -->
+      <audio id="benar-audio" src="benar dong.mp3"></audio>
+      <audio id="salah-audio" src="salah.mp3"></audio>
+      <audio id="skor-audio" src="skor.mp3"></audio>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        question: "Botol kaca termasuk sampah apa?",
+        options: ["Organik", "Anorganik", "B3", "Logam"],
+        answer: "Anorganik"
+      },
+      {
+        question: "Tempat sampah berwarna merah digunakan untuk sampah?",
+        options: ["Organik", "Anorganik", "B3", "Residu"],
+        answer: "B3"
+      },
+      {
+        question: "Buah-buahan yang sudah busuk termasuk sampah jenis ?",
+        options: ["Anorganik", "B3", "Organik", "Radioaktif"],
+        answer: "Organik"
+      },
+      {
+        question: "Berikut ini pilihan yang bukan merupakan sampah Anorganik adalah ?",
+        options: ["Bekas Korek", "plastik bekas shampo", "Daun pembungkus", "gelas plastik"],
+        answer: "Daun pembungkus"
+      },
+      {
+        question: "Tindakan yang keliru dalam menanggulangi sampah organik, kecuali...",
+        options: ["Membakarnya", "Menguburnya", "Menghanyutkannya di sungai", "Membuangnya ke laut"],
+        answer: "Menguburnya"
+      },
+      {
+        question: "Di bawah ini adalah alasan tidak boleh membuang sampah plastik di sungai kecuali...",
+        options: ["Menyebabkan Banjir", "Merusak ekosistem", "Menimbulkan penyakit bagi manusia", "Lebih praktis"],
+        answer: "Lebih praktis"
+      },
+      {
+        question: "Apa yang akan terjadi jika styrofoam dimusnahkan dengan cara dibakar ?",
+        options: ["Merusak lapisan Ozon", "Membuat udara lebih segar", "Mengusir hama", "Menjadikan tanah lebih subur"],
+        answer: "Merusak lapisan Ozon"
+      },
+      {
+        question: "Dibawah ini sampah yang tidak memiliki nilai ekonomis contohnya kecuali...",
+        options: ["Kertas bekas", "Karet bekas", "Plastik bekas", "Nasi bekas"],
+        answer: "Nasi bekas"
+      },
+      {
+        question: "Apa pengertian dari Bank Sampah ?",
+        options:["Tempat pembuangan sampah", "Sistem pengelolaan sampah dimana masyarakat dapat mengubah sampah kering menjadi bernilai", "Sistem Penitipan sampah dimana masyarakat menitipkan sampah layak nya Deposito di Bank", "Semua Jawaban Benar"],
+        answer: "Sistem pengelolaan sampah dimana masyarakat dapat mengubah sampah kering menjadi bernilai"
+      },
+      {
+        question: "Apa manfaat finansial dari menjadi Nasabah Bank Sampah",
+        options: ["Menjadikan lingkungan lebih bersih", "Mendapatkan hikmah tentang pengelolaan sampah", "Mendapat keuntungan berupa uang hasil tukar Bank Sampah", "Tidak memiliki keuntungan"],
+        answer: "Mendapat keuntungan berupa uang hasil tukar Bank Sampah"
+      }
+    ];
+
+    const startBtn = document.getElementById('start-btn');
+    const gameArea = document.getElementById('game-area');
+    const questionText = document.getElementById('question');
+    const optionButtons = document.querySelectorAll('.option-btn');
+    const feedback = document.getElementById('feedback');
+    const scoreDisplay = document.getElementById('score');
+
+    const benarAudio = document.getElementById("benar-audio");
+    const salahAudio = document.getElementById("salah-audio");
+    const skorAudio = document.getElementById("skor-audio");
+
+    let currentQuestion = 0;
+    let highScore = localStorage.getItem('highScore') || 0;
+    document.getElementById('high-score').textContent = "Skor Tertinggi: "+ highScore;
+    let score = 0;
+    let isAnswered = false;
+
+    startBtn.addEventListener('click', () => {
+      startBtn.style.display = 'none';
+      gameArea.style.display = 'block';
+      loadQuestion();
+    });
+
+    function loadQuestion() {
+      isAnswered = false;
+      feedback.textContent = "";
+      const current = questions[currentQuestion];
+      questionText.textContent = current.question;
+
+      questionText.classList.remove("fade-in");
+      void questionText.offsetWidth;
+      questionText.classList.add("fade-in");
+
+      optionButtons.forEach((btn, index) => {
+        btn.textContent = current.options[index];
+        btn.disabled = false;
+        btn.classList.remove("fade-in");
+        void btn.offsetWidth;
+        btn.classList.add("fade-in");
+      });
+    }
+
+    optionButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        if (!isAnswered) {
+          isAnswered = true;
+          checkAnswer(button);
+        }
+
+      });
+    });
+
+    function checkAnswer(button) {
+      const selected = button.textContent;
+      const correct = questions[currentQuestion].answer;
+
+      // Hentikan audio sebelumnya
+      benarAudio.pause();
+      benarAudio.currentTime = 0;
+      salahAudio.pause();
+      salahAudio.currentTime = 0;
+
+      if (selected === correct) {
+        feedback.textContent = "Benar!";
+        score += 10;
+        benarAudio.play();
+      } else {
+        feedback.textContent = `Salah! Jawaban yang Benar: ${correct}`;
+        salahAudio.play();
+      }
+
+      scoreDisplay.textContent = "Skor: " + score;
+
+      optionButtons.forEach(btn => btn.disabled = true);
+
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        setTimeout(loadQuestion, 1500);
+      } else {
+        setTimeout(() => {
+          questionText.textContent = "Game Selesai!";
+          feedback.textContent = `Skor akhir kamu: ${score}`;
+          skorAudio.play();
+          document.querySelector(".options").style.display = "none";
+          restartBtn.style.display = "inline-block";
+        }, 1000);
+        if (score > highScore) {
+            highScore = score; 
+            localStorage.setItem('highScore', highScore);
+
+            document.getElementById('high-score').textContent= "Skor Tertinggi: "+ highScore
+        }
+        const restartBtn = document.getElementById('restart-btn');
+
+        restartBtn.addEventListener('click', () => {
+            currentQuestion = 0;
+            score = 0;
+            scoreDisplay.textContent = "Skor: 0";
+            feedback.textContent = "";
+
+        document.querySelector(".options").style.display = "block";
+            restartBtn.style.display = "none";
+            loadQuestion();
+        });
+      }
+    }
+  </script>
+</body>
+</html>
